@@ -2,6 +2,7 @@
 require "mechanize"
 require "open-uri"
 require "fileutils"
+require "pry"
 
 module Staticizer
 
@@ -35,14 +36,18 @@ module Staticizer
     get_links(page)
     #get_iframes(page)
     get_static_assets(page)
-
+    write_file(url, page.root.to_s)
   end
 
   def self.write_file(url, data)
-    local_path = localized_path(url)
+    begin
+    local_path = output_path(url)
     FileUtils.mkdir_p(local_path.gsub(/\/[^\/]*$/, ''))
     File.open(local_path, 'w') { |f| f.puts data }
     puts "Wrote: #{local_path}"
+  rescue
+    puts "Issue: #{url}"
+  end
   end
 
   def self.get_static_assets(page)
@@ -67,7 +72,7 @@ module Staticizer
   end
 
   def self.localized_path(url)
-    url.gsub(/^#{Regexp.escape(@base_url)}/, '')
+    URI.parse(url).path
   end
   
   def self.agent
